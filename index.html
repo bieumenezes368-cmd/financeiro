@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Financeiro">
+<title>💰 Controle Financeiro</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; background: #111; color: #fff; min-height: 100vh; }
+
+  header { background: #1c1c1e; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #2c2c2e; }
+  header h1 { font-size: 18px; font-weight: 700; }
+  .ano-nav { display: flex; align-items: center; gap: 10px; }
+  .ano-nav button { background: #2c2c2e; border: none; color: #fff; width: 30px; height: 30px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  .ano-nav span { font-size: 15px; font-weight: 600; min-width: 44px; text-align: center; }
+
+  .tabs-main { display: flex; background: #1c1c1e; border-bottom: 1px solid #2c2c2e; }
+  .tabs-main button { flex: 1; padding: 12px; background: none; border: none; color: #888; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; }
+  .tabs-main button.active { color: #fff; border-bottom: 2px solid #0a84ff; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Meses */
+  .meses-tabs { display: flex; overflow-x: auto; background: #1c1c1e; gap: 4px; padding: 8px 12px; scrollbar-width: none; }
+  .meses-tabs::-webkit-scrollbar { display: none; }
+  .meses-tabs button { flex-shrink: 0; padding: 6px 14px; border-radius: 20px; border: none; background: #2c2c2e; color: #aaa; font-size: 13px; cursor: pointer; }
+  .meses-tabs button.active { background: #0a84ff; color: #fff; }
+
+  .mes-content { display: none; padding: 12px; }
+  .mes-content.active { display: block; }
+
+  .status-bar { padding: 8px 12px; border-radius: 10px; font-size: 13px; margin-bottom: 10px; text-align: center; }
+  .status-edicao { background: #3a3000; color: #ffd60a; }
+  .status-confirmado { background: #0d3d1a; color: #30d158; }
+
+  .btn-row { display: flex; gap: 8px; margin-bottom: 12px; justify-content: flex-end; }
+  .btn { padding: 8px 16px; border-radius: 10px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-editar { background: #2c2c2e; color: #fff; }
+  .btn-confirmar { background: #1a6b30; color: #fff; }
+  .btn-add { background: #0a84ff; color: #fff; width: 100%; padding: 12px; border-radius: 12px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+
+  .entrada { background: #1c1c1e; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  .entrada input, .entrada select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #3a3a3c; background: #2c2c2e; color: #fff; font-size: 15px; margin-bottom: 8px; }
+  .tipo-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .tipo-row button { flex: 1; padding: 10px; border-radius: 10px; border: 2px solid transparent; font-size: 14px; font-weight: 600; cursor: pointer; background: #2c2c2e; color: #aaa; }
+  .tipo-row button.sel-gasto { background: #3d1a1a; color: #ff453a; border-color: #ff453a; }
+  .tipo-row button.sel-ganho { background: #0d3d1a; color: #30d158; border-color: #30d158; }
+
+  .saldos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .saldo-card { flex: 1; min-width: 120px; background: #1c1c1e; border-radius: 12px; padding: 10px 12px; }
+  .saldo-card .label { font-size: 11px; color: #888; margin-bottom: 2px; }
+  .saldo-card .valor { font-size: 15px; font-weight: 700; }
+  .verde { color: #30d158; }
+  .vermelho { color: #ff453a; }
+  .cinza { color: #888; }
+  .azul { color: #0a84ff; }
+
+  .lista { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .item { display: flex; align-items: center; gap: 8px; background: #1c1c1e; border-radius: 12px; padding: 10px 12px; }
+  .item-icon { font-size: 18px; flex-shrink: 0; }
+  .item-info { flex: 1; }
+  .item-desc { font-size: 14px; font-weight: 500; }
+  .item-tipo { font-size: 11px; color: #888; }
+  .item-valor { font-size: 15px; font-weight: 700; flex-shrink: 0; }
+  .item-actions { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+  .item-actions button { background: #2c2c2e; border: none; color: #fff; width: 26px; height: 22px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+  .btn-del { background: none !important; border: none; color: #ff453a; font-size: 18px; cursor: pointer; flex-shrink: 0; }
+
+  .anotacoes { background: #1c1c1e; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+  .anotacoes label { font-size: 12px; color: #888; display: block; margin-bottom: 6px; }
+  .anotacoes textarea { width: 100%; background: #2c2c2e; border: 1px solid #3a3a3c; border-radius: 10px; color: #fff; font-size: 14px; padding: 10px; resize: none; height: 80px; }
+
+  /* Calendário */
+  .cal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; }
+  @media(min-width:600px){ .cal-grid { grid-template-columns: 1fr 1fr 1fr; } }
+  .cal-card { background: #1c1c1e; border-radius: 14px; padding: 12px; }
+  .cal-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .mini-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; margin-bottom: 8px; }
+  .mini-cal span { font-size: 8px; text-align: center; padding: 2px 0; border-radius: 4px; }
+  .mini-cal .header { color: #888; }
+  .mini-cal .hoje { background: #0a84ff; color: #fff; }
+  .cal-valores p { font-size: 11px; margin-bottom: 2px; }
+  .cal-total { background: #1c1c1e; border-radius: 14px; padding: 14px; margin: 0 12px 12px; }
+  .cal-total h3 { font-size: 14px; font-weight: 700; margin-bottom: 10px; text-align: center; }
+  .cal-total-row { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 8px; }
+  .cal-total-item { text-align: center; }
+  .cal-total-item .l { font-size: 11px; color: #888; }
+  .cal-total-item .v { font-size: 16px; font-weight: 700; }
+
+  .disabled { opacity: 0.4; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>💰 Financeiro</h1>
+  <div class="ano-nav">
+    <button onclick="mudarAno(-1)">◀</button>
+    <span id="label-ano"></span>
+    <button onclick="mudarAno(1)">▶</button>
+  </div>
+</header>
+
+<div class="tabs-main">
+  <button class="active" onclick="mudarTabMain('meses', this)">📅 Meses</button>
+  <button onclick="mudarTabMain('calendario', this)">🗓 Calendário</button>
+</div>
+
+<div id="tab-meses" class="tab-content active">
+  <div class="meses-tabs" id="meses-tabs"></div>
+  <div id="meses-conteudo"></div>
+</div>
+
+<div id="tab-calendario" class="tab-content">
+  <div class="cal-grid" id="cal-grid"></div>
+  <div class="cal-total" id="cal-total"></div>
+</div>
+
+<script>
+const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+               "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+let anoAtual = new Date().getFullYear();
+let mesAtual = MESES[new Date().getMonth()];
+let tipoSelecionado = {};
+let dados = carregarDados();
+
+function carregarDados() {
+  try { return JSON.parse(localStorage.getItem('financeiro') || '{}'); } catch { return {}; }
+}
+
+function salvar() {
+  localStorage.setItem('financeiro', JSON.stringify(dados));
+}
+
+function garantirAno(ano) {
+  const a = String(ano);
+  if (!dados[a]) dados[a] = {};
+  MESES.forEach(m => {
+    if (!dados[a][m]) dados[a][m] = { transacoes: [], anotacoes: '', confirmado: false };
+    if (dados[a][m].confirmado === undefined) dados[a][m].confirmado = false;
+  });
+}
+
+function saldoMes(ano, mes) {
+  const ts = dados[String(ano)]?.[mes]?.transacoes || [];
+  return ts.reduce((s, t) => t.tipo === 'Ganho' ? s + t.valor : s - t.valor, 0);
+}
+
+function acumuladoAte(ano, mes) {
+  let total = 0;
+  const idx = MESES.indexOf(mes);
+  for (let i = 0; i < idx; i++) {
+    const m = MESES[i];
+    if (dados[String(ano)]?.[m]?.confirmado) total += saldoMes(ano, m);
+  }
+  return total;
+}
+
+function mudarAno(d) {
+  anoAtual += d;
+  garantirAno(anoAtual);
+  salvar();
+  document.getElementById('label-ano').textContent = anoAtual;
+  renderTudo();
+}
+
+function mudarTabMain(tab, btn) {
+  document.querySelectorAll('.tabs-main button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'calendario') renderCalendario();
+}
+
+function renderTudo() {
+  renderMeses();
+  renderCalendario();
+}
+
+// ── MESES ──────────────────────────────────────────────────────
+
+function renderMeses() {
+  const tabsEl = document.getElementById('meses-tabs');
+  const contEl = document.getElementById('meses-conteudo');
+  tabsEl.innerHTML = '';
+  contEl.innerHTML = '';
+
+  MESES.forEach(mes => {
+    const btn = document.createElement('button');
+    btn.textContent = mes.slice(0, 3);
+    if (mes === mesAtual) btn.classList.add('active');
+    btn.onclick = () => {
+      document.querySelectorAll('.meses-tabs button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.mes-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('mc-' + mes).classList.add('active');
+    };
+    tabsEl.appendChild(btn);
+
+    const div = document.createElement('div');
+    div.className = 'mes-content' + (mes === mesAtual ? ' active' : '');
+    div.id = 'mc-' + mes;
+    contEl.appendChild(div);
+    renderMes(mes);
+  });
+}
+
+function renderMes(mes) {
+  const ano = String(anoAtual);
+  garantirAno(anoAtual);
+  const d = dados[ano][mes];
+  const confirmado = d.confirmado;
+  const div = document.getElementById('mc-' + mes);
+  if (!tipoSelecionado[mes]) tipoSelecionado[mes] = 'Gasto';
+  const tipo = tipoSelecionado[mes];
+
+  const ts = d.transacoes;
+  const ganhos = ts.filter(t => t.tipo === 'Ganho').reduce((s,t) => s+t.valor, 0);
+  const gastos = ts.filter(t => t.tipo === 'Gasto').reduce((s,t) => s+t.valor, 0);
+  const saldo = ganhos - gastos;
+  const idx = MESES.indexOf(mes);
+
+  // Saldo anterior
+  let txtAnterior = '', corAnterior = 'cinza';
+  if (idx > 0) {
+    const mAnt = MESES[idx - 1];
+    const confAnt = dados[ano]?.[mAnt]?.confirmado;
+    if (confAnt) {
+      const sAnt = saldoMes(anoAtual, mAnt);
+      corAnterior = sAnt >= 0 ? 'verde' : 'vermelho';
+      txtAnterior = `↩ ${mAnt.slice(0,3)}: R$ ${sAnt >= 0 ? '+' : ''}${sAnt.toFixed(2)}`;
+    } else {
+      txtAnterior = `↩ ${mAnt.slice(0,3)}: pendente`;
+    }
+  }
+
+  // Projeção próximo mês
+  let txtProximo = '', corProximo = 'cinza';
+  if (idx < 11) {
+    const mProx = MESES[idx + 1];
+    if (confirmado) {
+      const proj = acumuladoAte(anoAtual, mes) + saldo;
+      corProximo = proj >= 0 ? 'verde' : 'vermelho';
+      txtProximo = `↪ ${mProx.slice(0,3)}: R$ ${proj >= 0 ? '+' : ''}${proj.toFixed(2)}`;
+    } else {
+      txtProximo = `↪ ${mProx.slice(0,3)}: confirme o mês`;
+    }
+  }
+
+  const corSaldo = saldo >= 0 ? 'verde' : 'vermelho';
+
+  div.innerHTML = `
+    <div class="status-bar ${confirmado ? 'status-confirmado' : 'status-edicao'}">
+      ${confirmado ? '✅ Mês confirmado' : '✏️ Modo edição'}
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-editar ${confirmado ? '' : 'disabled'}" onclick="editarMes('${mes}')">✏️ Editar</button>
+      <button class="btn btn-confirmar ${confirmado ? 'disabled' : ''}" onclick="confirmarMes('${mes}')">✅ Confirmar</button>
+    </div>
+
+    <div class="entrada ${confirmado ? 'disabled' : ''}">
+      <input type="text" id="desc-${mes}" placeholder="Descrição (ex: Salário)">
+      <input type="number" id="val-${mes}" placeholder="Valor em R$" step="0.01" min="0">
+      <div class="tipo-row">
+        <button id="btn-gasto-${mes}" class="${tipo==='Gasto'?'sel-gasto':''}" onclick="setTipo('${mes}','Gasto')">🔴 Gasto</button>
+        <button id="btn-ganho-${mes}" class="${tipo==='Ganho'?'sel-ganho':''}" onclick="setTipo('${mes}','Ganho')">✅ Ganho</button>
+      </div>
+      <button class="btn-add" onclick="adicionar('${mes}')">+ Adicionar</button>
+    </div>
+
+    <div class="saldos">
+      ${txtAnterior ? `<div class="saldo-card"><div class="label">Mês anterior</div><div class="valor ${corAnterior}">${txtAnterior}</div></div>` : ''}
+      <div class="saldo-card"><div class="label">Ganhos</div><div class="valor verde">R$ ${ganhos.toFixed(2)}</div></div>
+      <div class="saldo-card"><div class="label">Gastos</div><div class="valor vermelho">R$ ${gastos.toFixed(2)}</div></div>
+      <div class="saldo-card"><div class="label">Saldo</div><div class="valor ${corSaldo}">R$ ${saldo.toFixed(2)}</div></div>
+      ${txtProximo ? `<div class="saldo-card"><div class="label">Próximo mês</div><div class="valor ${corProximo}">${txtProximo}</div></div>` : ''}
+    </div>
+
+    <div class="lista" id="lista-${mes}">
+      ${ts.length === 0 ? '<p style="color:#888;font-size:13px;text-align:center;padding:12px">Nenhum item ainda</p>' :
+        ts.map((t, i) => `
+          <div class="item">
+            <span class="item-icon">${t.tipo==='Ganho'?'➕':'➖'}</span>
+            <div class="item-info">
+              <div class="item-desc">${t.descricao}</div>
+              <div class="item-tipo">${t.tipo}</div>
+            </div>
+            <span class="item-valor ${t.tipo==='Ganho'?'verde':'vermelho'}">R$ ${t.valor.toFixed(2)}</span>
+            ${!confirmado ? `
+              <div class="item-actions">
+                <button onclick="mover('${mes}',${i},-1)">▲</button>
+                <button onclick="mover('${mes}',${i},1)">▼</button>
+              </div>
+              <button class="btn-del" onclick="remover('${mes}',${i})">🗑</button>
+            ` : ''}
+          </div>`).join('')}
+    </div>
+
+    <div class="anotacoes ${confirmado ? 'disabled' : ''}">
+      <label>📝 Anotações do mês</label>
+      <textarea id="anot-${mes}" onchange="salvarAnotacao('${mes}')">${d.anotacoes||''}</textarea>
+    </div>
+  `;
+}
+
+function setTipo(mes, tipo) {
+  tipoSelecionado[mes] = tipo;
+  renderMes(mes);
+}
+
+function adicionar(mes) {
+  const desc = document.getElementById('desc-' + mes).value.trim();
+  const val = parseFloat(document.getElementById('val-' + mes).value);
+  if (!desc || isNaN(val) || val <= 0) return;
+  const ano = String(anoAtual);
+  dados[ano][mes].transacoes.push({ descricao: desc, valor: val, tipo: tipoSelecionado[mes] || 'Gasto' });
+  salvar();
+  renderMes(mes);
+}
+
+function remover(mes, idx) {
+  dados[String(anoAtual)][mes].transacoes.splice(idx, 1);
+  salvar();
+  renderMes(mes);
+}
+
+function mover(mes, idx, dir) {
+  const ts = dados[String(anoAtual)][mes].transacoes;
+  const novo = idx + dir;
+  if (novo < 0 || novo >= ts.length) return;
+  [ts[idx], ts[novo]] = [ts[novo], ts[idx]];
+  salvar();
+  renderMes(mes);
+}
+
+function confirmarMes(mes) {
+  dados[String(anoAtual)][mes].confirmado = true;
+  salvar();
+  renderMes(mes);
+  const idx = MESES.indexOf(mes);
+  if (idx < 11) renderMes(MESES[idx + 1]);
+  if (idx > 0) renderMes(MESES[idx - 1]);
+  renderCalendario();
+}
+
+function editarMes(mes) {
+  dados[String(anoAtual)][mes].confirmado = false;
+  salvar();
+  renderMes(mes);
+  const idx = MESES.indexOf(mes);
+  if (idx < 11) renderMes(MESES[idx + 1]);
+  renderCalendario();
+}
+
+function salvarAnotacao(mes) {
+  const val = document.getElementById('anot-' + mes)?.value || '';
+  dados[String(anoAtual)][mes].anotacoes = val;
+  salvar();
+}
+
+// ── CALENDÁRIO ────────────────────────────────────────────────
+
+function renderCalendario() {
+  const ano = String(anoAtual);
+  garantirAno(anoAtual);
+  const grid = document.getElementById('cal-grid');
+  const total = document.getElementById('cal-total');
+  grid.innerHTML = '';
+
+  let acumulado = 0;
+  let totalGanhos = 0, totalGastos = 0;
+  const hoje = new Date();
+
+  MESES.forEach((mes, mi) => {
+    const d = dados[ano][mes];
+    const ts = d.transacoes;
+    const ganhos = ts.filter(t => t.tipo==='Ganho').reduce((s,t)=>s+t.valor,0);
+    const gastos = ts.filter(t => t.tipo==='Gasto').reduce((s,t)=>s+t.valor,0);
+    const saldo = ganhos - gastos;
+    if (d.confirmado) acumulado += saldo;
+    totalGanhos += ganhos;
+    totalGastos += gastos;
+
+    const corSaldo = saldo >= 0 ? '#30d158' : '#ff453a';
+    const corAcum = acumulado >= 0 ? '#30d158' : '#ff453a';
+
+    // Mini calendário
+    const primeiroDia = new Date(anoAtual, mi, 1).getDay();
+    const offset = (primeiroDia + 6) % 7;
+    const diasNoMes = new Date(anoAtual, mi + 1, 0).getDate();
+    let miniCal = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d => `<span class="header">${d[0]}</span>`).join('');
+    for (let i = 0; i < offset; i++) miniCal += '<span></span>';
+    for (let d = 1; d <= diasNoMes; d++) {
+      const ehHoje = d === hoje.getDate() && mi === hoje.getMonth() && anoAtual === hoje.getFullYear();
+      miniCal += `<span ${ehHoje ? 'class="hoje"' : ''}>${d}</span>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'cal-card';
+    card.innerHTML = `
+      <h3>${mes} <span>${d.confirmado ? '✅' : '✏️'}</span></h3>
+      <div class="mini-cal">${miniCal}</div>
+      <div class="cal-valores">
+        <p class="verde">✅ R$ ${ganhos.toFixed(2)}</p>
+        <p class="vermelho">🔴 R$ ${gastos.toFixed(2)}</p>
+        <p style="color:${corSaldo};font-weight:700">💵 R$ ${saldo.toFixed(2)}</p>
+        ${d.confirmado
+          ? `<p style="color:${corAcum};font-size:10px">📈 Acum: R$ ${acumulado.toFixed(2)}</p>`
+          : `<p class="cinza" style="font-size:10px">⏳ Pendente</p>`}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  const totalSaldo = totalGanhos - totalGastos;
+  const corTotal = totalSaldo >= 0 ? '#30d158' : '#ff453a';
+  total.innerHTML = `
+    <h3>Total ${anoAtual}</h3>
+    <div class="cal-total-row">
+      <div class="cal-total-item"><div class="l">Ganhos</div><div class="v verde">R$ ${totalGanhos.toFixed(2)}</div></div>
+      <div class="cal-total-item"><div class="l">Gastos</div><div class="v vermelho">R$ ${totalGastos.toFixed(2)}</div></div>
+      <div class="cal-total-item"><div class="l">Saldo Final</div><div class="v" style="color:${corTotal}">R$ ${totalSaldo.toFixed(2)}</div></div>
+    </div>
+  `;
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+garantirAno(anoAtual);
+salvar();
+document.getElementById('label-ano').textContent = anoAtual;
+renderTudo();
+</script>
+</body>
+</html>
