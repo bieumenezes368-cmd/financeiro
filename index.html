@@ -121,6 +121,107 @@
 </div>
 
 <script>
+ <!-- Calculadora -->
+<div id="modal-calc" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:#1c1c1e;border-radius:20px;padding:20px;width:320px;max-width:92vw;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <span style="font-size:15px;font-weight:700;color:#fff;">🧮 Calculadora</span>
+      <button onclick="fecharCalculadora()" style="background:none;border:none;color:#888;font-size:22px;cursor:pointer;">×</button>
+    </div>
+
+    <!-- Abas -->
+    <div style="display:flex;background:#2c2c2e;border-radius:10px;margin-bottom:14px;padding:3px;gap:3px;">
+      <button id="tab-simples" onclick="trocarAbaCalc('simples')" style="flex:1;padding:7px;border:none;border-radius:8px;background:#0a84ff;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">Simples</button>
+      <button id="tab-financeira" onclick="trocarAbaCalc('financeira')" style="flex:1;padding:7px;border:none;border-radius:8px;background:none;color:#888;font-size:12px;font-weight:600;cursor:pointer;">Financeira</button>
+    </div>
+
+    <!-- Calculadora Simples -->
+    <div id="calc-simples">
+      <div id="display-calc" style="background:#2c2c2e;border-radius:12px;padding:12px 16px;margin-bottom:10px;text-align:right;">
+        <div id="calc-expr" style="font-size:12px;color:#888;min-height:16px;"></div>
+        <div id="calc-result" style="font-size:26px;font-weight:700;color:#fff;">0</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        <button class="cbtn cbtn-func" onclick="calcInput('C')">C</button>
+        <button class="cbtn cbtn-func" onclick="calcInput('+/-')">+/-</button>
+        <button class="cbtn cbtn-func" onclick="calcInput('%')">%</button>
+        <button class="cbtn cbtn-op" onclick="calcInput('/')">÷</button>
+
+        <button class="cbtn cbtn-num" onclick="calcInput('7')">7</button>
+        <button class="cbtn cbtn-num" onclick="calcInput('8')">8</button>
+        <button class="cbtn cbtn-num" onclick="calcInput('9')">9</button>
+        <button class="cbtn cbtn-op" onclick="calcInput('*')">×</button>
+
+        <button class="cbtn cbtn-num" onclick="calcInput('4')">4</button>
+        <button class="cbtn cbtn-num" onclick="calcInput('5')">5</button>
+        <button class="cbtn cbtn-num" onclick="calcInput('6')">6</button>
+        <button class="cbtn cbtn-op" onclick="calcInput('-')">−</button>
+
+        <button class="cbtn cbtn-num" onclick="calcInput('1')">1</button>
+        <button class="cbtn cbtn-num" onclick="calcInput('2')">2</button>
+        <button class="cbtn cbtn-num" onclick="calcInput('3')">3</button>
+        <button class="cbtn cbtn-op" onclick="calcInput('+')">+</button>
+
+        <button class="cbtn cbtn-num" onclick="calcInput('0')" style="grid-column:span 2;">0</button>
+        <button class="cbtn cbtn-num" onclick="calcInput('.')">.</button>
+        <button class="cbtn cbtn-op" onclick="calcInput('=')">=</button>
+      </div>
+    </div>
+
+    <!-- Calculadora Financeira -->
+    <div id="calc-financeira" style="display:none;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+
+        <!-- Porcentagem -->
+        <div style="background:#2c2c2e;border-radius:12px;padding:12px;">
+          <div style="font-size:12px;color:#888;margin-bottom:8px;">📊 Porcentagem</div>
+          <div style="display:flex;gap:6px;margin-bottom:6px;">
+            <input id="fin-valor" type="number" placeholder="Valor (R$)" style="flex:1;background:#3a3a3c;border:none;border-radius:8px;padding:8px;color:#fff;font-size:13px;">
+            <input id="fin-pct" type="number" placeholder="%" style="width:70px;background:#3a3a3c;border:none;border-radius:8px;padding:8px;color:#fff;font-size:13px;">
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button onclick="calcPct('desconto')" style="flex:1;background:#3d1a1a;color:#ff453a;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;">Desconto</button>
+            <button onclick="calcPct('acrescimo')" style="flex:1;background:#0d3d1a;color:#30d158;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;">Acréscimo</button>
+            <button onclick="calcPct('quanto')" style="flex:1;background:#1a2a4a;color:#0a84ff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;">Quanto é</button>
+          </div>
+          <div id="res-pct" style="margin-top:8px;font-size:13px;color:#fff;text-align:center;min-height:18px;"></div>
+        </div>
+
+        <!-- Juros simples -->
+        <div style="background:#2c2c2e;border-radius:12px;padding:12px;">
+          <div style="font-size:12px;color:#888;margin-bottom:8px;">💰 Juros Simples</div>
+          <div style="display:flex;gap:6px;margin-bottom:6px;">
+            <input id="jur-capital" type="number" placeholder="Capital (R$)" style="flex:1;background:#3a3a3c;border:none;border-radius:8px;padding:8px;color:#fff;font-size:13px;">
+            <input id="jur-taxa" type="number" placeholder="Taxa %" style="width:80px;background:#3a3a3c;border:none;border-radius:8px;padding:8px;color:#fff;font-size:13px;">
+            <input id="jur-tempo" type="number" placeholder="Meses" style="width:75px;background:#3a3a3c;border:none;border-radius:8px;padding:8px;color:#fff;font-size:13px;">
+          </div>
+          <button onclick="calcJuros()" style="width:100%;background:#0a84ff;color:#fff;border:none;border-radius:8px;padding:8px;font-size:13px;font-weight:600;cursor:pointer;">Calcular</button>
+          <div id="res-juros" style="margin-top:8px;font-size:13px;color:#fff;text-align:center;min-height:18px;"></div>
+        </div>
+
+        <!-- Divisao de conta -->
+        <div style="background:#2c2c2e;border-radius:12px;padding:12px;">
+          <div style="font-size:12px;color:#888;margin-bottom:8px;">🍽️ Dividir conta</div>
+          <div style="display:flex;gap:6px;margin-bottom:6px;">
+            <input id="div-total" type="number" placeholder="Total (R$)" style="flex:1;background:#3a3a3c;border:none;border-radius:8px;padding:8px;color:#fff;font-size:13px;">
+            <input id="div-pessoas" type="number" placeholder="Pessoas" style="width:90px;background:#3a3a3c;border:none;border-radius:8px;padding:8px;color:#fff;font-size:13px;">
+          </div>
+          <button onclick="calcDivisao()" style="width:100%;background:#0a84ff;color:#fff;border:none;border-radius:8px;padding:8px;font-size:13px;font-weight:600;cursor:pointer;">Dividir</button>
+          <div id="res-div" style="margin-top:8px;font-size:13px;color:#fff;text-align:center;min-height:18px;"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.cbtn { padding:0;height:58px;border:none;border-radius:12px;font-size:18px;font-weight:500;cursor:pointer;transition:opacity 0.1s; }
+.cbtn:active { opacity:0.6; }
+.cbtn-num { background:#3a3a3c;color:#fff; }
+.cbtn-op { background:#0a84ff;color:#fff; }
+.cbtn-func { background:#505050;color:#fff; }
+</style>
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
                "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
@@ -163,6 +264,87 @@ function acumuladoAte(ano, mes) {
 
 function mudarAno(d) {
   anoAtual += d;
+ // ── CALCULADORA ──────────────────────────────────────────────
+function abrirCalculadora() {
+  const m = document.getElementById('modal-calc');
+  m.style.display = 'flex';
+}
+function fecharCalculadora() {
+  document.getElementById('modal-calc').style.display = 'none';
+}
+document.getElementById('modal-calc').addEventListener('click', function(e) {
+  if (e.target === this) fecharCalculadora();
+});
+function trocarAbaCalc(aba) {
+  document.getElementById('calc-simples').style.display = aba === 'simples' ? 'block' : 'none';
+  document.getElementById('calc-financeira').style.display = aba === 'financeira' ? 'block' : 'none';
+  document.getElementById('tab-simples').style.background = aba === 'simples' ? '#0a84ff' : 'none';
+  document.getElementById('tab-simples').style.color = aba === 'simples' ? '#fff' : '#888';
+  document.getElementById('tab-financeira').style.background = aba === 'financeira' ? '#0a84ff' : 'none';
+  document.getElementById('tab-financeira').style.color = aba === 'financeira' ? '#fff' : '#888';
+}
+let calcExpr = '', calcCurrent = '0', calcNewNum = true;
+function calcInput(v) {
+  const expr = document.getElementById('calc-expr');
+  const result = document.getElementById('calc-result');
+  if (v === 'C') { calcExpr = ''; calcCurrent = '0'; calcNewNum = true; }
+  else if (v === '+/-') { calcCurrent = String(parseFloat(calcCurrent) * -1); }
+  else if (v === '%') { calcCurrent = String(parseFloat(calcCurrent) / 100); }
+  else if (['+','-','*','/'].includes(v)) {
+    calcExpr += calcCurrent + ' ' + (v==='*'?'×':v==='/'?'÷':v) + ' ';
+    calcCurrent = '0'; calcNewNum = true;
+  }
+  else if (v === '=') {
+    try {
+      const exprReal = calcExpr.replace(/×/g,'*').replace(/÷/g,'/') + calcCurrent;
+      const res = Function('"use strict"; return (' + exprReal + ')')();
+      calcCurrent = String(Math.round(res * 1e10) / 1e10);
+      calcExpr = '';
+    } catch { calcCurrent = 'Erro'; }
+    calcNewNum = true;
+  }
+  else if (v === '.') {
+    if (calcNewNum) { calcCurrent = '0.'; calcNewNum = false; }
+    else if (!calcCurrent.includes('.')) calcCurrent += '.';
+  }
+  else {
+    if (calcNewNum || calcCurrent === '0') { calcCurrent = v; calcNewNum = false; }
+    else calcCurrent += v;
+  }
+  expr.textContent = calcExpr;
+  result.textContent = calcCurrent;
+}
+function calcPct(tipo) {
+  const val = parseFloat(document.getElementById('fin-valor').value);
+  const pct = parseFloat(document.getElementById('fin-pct').value);
+  const el = document.getElementById('res-pct');
+  if (isNaN(val) || isNaN(pct)) { el.textContent = 'Preencha os campos'; return; }
+  if (tipo === 'desconto') {
+    const desc = val * pct / 100;
+    el.innerHTML = '<span style="color:#ff453a">Desconto: R$ ' + desc.toFixed(2) + '</span>  →  <span style="color:#30d158">Final: R$ ' + (val - desc).toFixed(2) + '</span>';
+  } else if (tipo === 'acrescimo') {
+    const acres = val * pct / 100;
+    el.innerHTML = '<span style="color:#ffd60a">Acréscimo: R$ ' + acres.toFixed(2) + '</span>  →  <span style="color:#ff453a">Final: R$ ' + (val + acres).toFixed(2) + '</span>';
+  } else {
+    el.innerHTML = '<span style="color:#0a84ff">' + pct + '% de R$ ' + val.toFixed(2) + ' = R$ ' + (val * pct / 100).toFixed(2) + '</span>';
+  }
+}
+function calcJuros() {
+  const C = parseFloat(document.getElementById('jur-capital').value);
+  const i = parseFloat(document.getElementById('jur-taxa').value) / 100;
+  const t = parseFloat(document.getElementById('jur-tempo').value);
+  const el = document.getElementById('res-juros');
+  if (isNaN(C) || isNaN(i) || isNaN(t)) { el.textContent = 'Preencha os campos'; return; }
+  const juros = C * i * t;
+  el.innerHTML = 'Juros: <span style="color:#ff453a">R$ ' + juros.toFixed(2) + '</span>  |  Total: <span style="color:#30d158">R$ ' + (C + juros).toFixed(2) + '</span>';
+}
+function calcDivisao() {
+  const total = parseFloat(document.getElementById('div-total').value);
+  const pessoas = parseInt(document.getElementById('div-pessoas').value);
+  const el = document.getElementById('res-div');
+  if (isNaN(total) || isNaN(pessoas) || pessoas <= 0) { el.textContent = 'Preencha os campos'; return; }
+  el.innerHTML = 'Cada um paga: <span style="color:#0a84ff;font-weight:700">R$ ' + (total / pessoas).toFixed(2) + '</span>';
+}
   garantirAno(anoAtual);
   salvar();
   document.getElementById('label-ano').textContent = anoAtual;
@@ -259,6 +441,7 @@ function renderMes(mes) {
       ${confirmado ? '✅ Mês confirmado' : '✏️ Modo edição'}
     </div>
     <div class="btn-row">
+      <button class="btn" style="background:#2c2c2e;color:#fff;" onclick="abrirCalculadora()">🧮 Calc</button>
       <button class="btn btn-editar ${confirmado ? '' : 'disabled'}" onclick="editarMes('${mes}')">✏️ Editar</button>
       <button class="btn btn-confirmar ${confirmado ? 'disabled' : ''}" onclick="confirmarMes('${mes}')">✅ Confirmar</button>
     </div>
