@@ -36,18 +36,24 @@
   .btn-confirmar { background: #1a6b30; color: #fff; }
   .btn-add { background: #0a84ff; color: #fff; width: 100%; padding: 12px; border-radius: 12px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; }
   .entrada { background: rgba(28,28,30,0.85); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
-  .entrada input, .entrada select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #3a3a3c; background: #2c2c2e; color: #fff; font-size: 15px; margin-bottom: 8px; }
-  .tipo-row { display: flex; gap: 8px; margin-bottom: 8px; }
-  .tipo-row button { flex: 1; padding: 10px; border-radius: 10px; border: 2px solid transparent; font-size: 14px; font-weight: 600; cursor: pointer; background: #2c2c2e; color: #aaa; }
+  .entrada input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #3a3a3c; background: #2c2c2e; color: #fff; font-size: 15px; margin-bottom: 8px; }
+  .tipo-row { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .tipo-row button { flex: 1; min-width: 70px; padding: 10px 6px; border-radius: 10px; border: 2px solid transparent; font-size: 13px; font-weight: 600; cursor: pointer; background: #2c2c2e; color: #aaa; }
   .tipo-row button.sel-gasto { background: #3d1a1a; color: #ff453a; border-color: #ff453a; }
   .tipo-row button.sel-ganho { background: #0d3d1a; color: #30d158; border-color: #30d158; }
+  .tipo-row button.sel-benef-rec { background: #3d1a2e; color: #ff6eb4; border-color: #ff6eb4; }
+  .tipo-row button.sel-benef-gasto { background: #2a1a3d; color: #bf5fff; border-color: #bf5fff; }
   .saldos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-  .saldo-card { flex: 1; min-width: 120px; background: rgba(28,28,30,0.85); border-radius: 12px; padding: 10px 12px; }
+  .saldo-card { flex: 1; min-width: 100px; background: rgba(28,28,30,0.85); border-radius: 12px; padding: 10px 12px; }
   .saldo-card .label { font-size: 11px; color: #888; margin-bottom: 2px; }
   .saldo-card .valor { font-size: 15px; font-weight: 700; }
+  .saldo-card.benef { background: rgba(40,20,50,0.85); border: 1px solid rgba(191,95,255,0.3); }
   .verde { color: #30d158; } .vermelho { color: #ff453a; } .cinza { color: #888; } .azul { color: #0a84ff; }
+  .rosa { color: #ff6eb4; } .roxo { color: #bf5fff; }
   .lista { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
   .item { display: flex; align-items: center; gap: 8px; background: rgba(28,28,30,0.85); border-radius: 12px; padding: 10px 12px; }
+  .item.item-benef-rec { background: rgba(61,26,46,0.85); border-left: 3px solid #ff6eb4; }
+  .item.item-benef-gasto { background: rgba(42,26,61,0.85); border-left: 3px solid #bf5fff; }
   .item-icon { font-size: 18px; flex-shrink: 0; }
   .item-info { flex: 1; }
   .item-desc { font-size: 14px; font-weight: 500; }
@@ -59,6 +65,7 @@
   .anotacoes { background: rgba(28,28,30,0.85); border-radius: 14px; padding: 12px; margin-bottom: 12px; }
   .anotacoes label { font-size: 12px; color: #888; display: block; margin-bottom: 6px; }
   .anotacoes textarea { width: 100%; background: #2c2c2e; border: 1px solid #3a3a3c; border-radius: 10px; color: #fff; font-size: 14px; padding: 10px; resize: none; height: 80px; }
+  .separador { font-size: 11px; color: #888; margin: 8px 0 4px; padding-left: 4px; }
   .cal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; }
   @media(min-width:600px){ .cal-grid { grid-template-columns: 1fr 1fr 1fr; } }
   .cal-card { background: rgba(28,28,30,0.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; }
@@ -206,7 +213,10 @@ function garantirAno(ano) {
 
 function saldoMes(ano, mes) {
   const ts = dados[String(ano)]?.[mes]?.transacoes || [];
-  return ts.reduce((s, t) => t.tipo === 'Ganho' ? s + t.valor : s - t.valor, 0);
+  return ts.reduce((s, t) => {
+    if (t.tipo === 'Ganho' || t.tipo === 'Benefício Recebido') return s + t.valor;
+    return s - t.valor;
+  }, 0);
 }
 
 function acumuladoAte(ano, mes) {
@@ -270,9 +280,14 @@ function renderMes(mes) {
   if (!tipoSelecionado[mes]) tipoSelecionado[mes] = 'Gasto';
   const tipo = tipoSelecionado[mes];
   const ts = d.transacoes;
+
   const ganhos = ts.filter(t => t.tipo === 'Ganho').reduce((s, t) => s + t.valor, 0);
   const gastos = ts.filter(t => t.tipo === 'Gasto').reduce((s, t) => s + t.valor, 0);
-  const saldo = ganhos - gastos;
+  const benefRec = ts.filter(t => t.tipo === 'Benefício Recebido').reduce((s, t) => s + t.valor, 0);
+  const benefGasto = ts.filter(t => t.tipo === 'Benefício Gasto').reduce((s, t) => s + t.valor, 0);
+  const saldoBenef = benefRec - benefGasto;
+  const saldo = ganhos - gastos + saldoBenef;
+
   const idx = MESES.indexOf(mes);
 
   let txtAnterior = '', corAnterior = 'cinza';
@@ -297,6 +312,36 @@ function renderMes(mes) {
   }
 
   const corSaldo = saldo >= 0 ? 'verde' : 'vermelho';
+  const corBenef = saldoBenef >= 0 ? 'rosa' : 'roxo';
+
+  const tipoClass = {
+    'Gasto': 'sel-gasto',
+    'Ganho': 'sel-ganho',
+    'Benefício Recebido': 'sel-benef-rec',
+    'Benefício Gasto': 'sel-benef-gasto'
+  };
+
+  const iconeItem = t => {
+    if (t.tipo === 'Ganho') return '➕';
+    if (t.tipo === 'Gasto') return '➖';
+    if (t.tipo === 'Benefício Recebido') return '🌸';
+    if (t.tipo === 'Benefício Gasto') return '🟣';
+    return '•';
+  };
+
+  const classeItem = t => {
+    if (t.tipo === 'Benefício Recebido') return 'item item-benef-rec';
+    if (t.tipo === 'Benefício Gasto') return 'item item-benef-gasto';
+    return 'item';
+  };
+
+  const corValorItem = t => {
+    if (t.tipo === 'Ganho') return 'verde';
+    if (t.tipo === 'Gasto') return 'vermelho';
+    if (t.tipo === 'Benefício Recebido') return 'rosa';
+    if (t.tipo === 'Benefício Gasto') return 'roxo';
+    return '';
+  };
 
   div.innerHTML = `
     <div class="status-bar ${confirmado ? 'status-confirmado' : 'status-edicao'}">
@@ -311,8 +356,10 @@ function renderMes(mes) {
       <input type="text" id="desc-${mes}" placeholder="Descrição (ex: Salário)">
       <input type="number" id="val-${mes}" placeholder="Valor em R$" step="0.01" min="0">
       <div class="tipo-row">
-        <button id="btn-gasto-${mes}" class="${tipo === 'Gasto' ? 'sel-gasto' : ''}" onclick="setTipo('${mes}','Gasto')">🔴 Gasto</button>
-        <button id="btn-ganho-${mes}" class="${tipo === 'Ganho' ? 'sel-ganho' : ''}" onclick="setTipo('${mes}','Ganho')">✅ Ganho</button>
+        <button class="${tipo === 'Ganho' ? 'sel-ganho' : ''}" onclick="setTipo('${mes}','Ganho')">✅ Ganho</button>
+        <button class="${tipo === 'Gasto' ? 'sel-gasto' : ''}" onclick="setTipo('${mes}','Gasto')">🔴 Gasto</button>
+        <button class="${tipo === 'Benefício Recebido' ? 'sel-benef-rec' : ''}" onclick="setTipo('${mes}','Benefício Recebido')">🌸 Benef+</button>
+        <button class="${tipo === 'Benefício Gasto' ? 'sel-benef-gasto' : ''}" onclick="setTipo('${mes}','Benefício Gasto')">🟣 Benef-</button>
       </div>
       <button class="btn-add" onclick="adicionar('${mes}')">+ Adicionar</button>
     </div>
@@ -320,26 +367,49 @@ function renderMes(mes) {
       ${txtAnterior ? `<div class="saldo-card"><div class="label">Mês anterior</div><div class="valor ${corAnterior}">${txtAnterior}</div></div>` : ''}
       <div class="saldo-card"><div class="label">Ganhos</div><div class="valor verde">R$ ${ganhos.toFixed(2)}</div></div>
       <div class="saldo-card"><div class="label">Gastos</div><div class="valor vermelho">R$ ${gastos.toFixed(2)}</div></div>
-      <div class="saldo-card"><div class="label">Saldo</div><div class="valor ${corSaldo}">R$ ${saldo.toFixed(2)}</div></div>
+      <div class="saldo-card benef"><div class="label">💜 Benefícios</div><div class="valor ${corBenef}">R$ ${saldoBenef.toFixed(2)}</div></div>
+      <div class="saldo-card"><div class="label">Saldo Total</div><div class="valor ${corSaldo}">R$ ${saldo.toFixed(2)}</div></div>
       ${txtProximo ? `<div class="saldo-card"><div class="label">Próximo mês</div><div class="valor ${corProximo}">${txtProximo}</div></div>` : ''}
     </div>
-    <div class="lista" id="lista-${mes}">
-      ${ts.length === 0 ? '<p style="color:#888;font-size:13px;text-align:center;padding:12px">Nenhum item ainda</p>' :
-        ts.map((t, i) => `
-          <div class="item">
-            <span class="item-icon">${t.tipo === 'Ganho' ? '➕' : '➖'}</span>
-            <div class="item-info">
-              <div class="item-desc">${t.descricao}</div>
-              <div class="item-tipo">${t.tipo}</div>
+    ${ts.filter(t => t.tipo === 'Ganho' || t.tipo === 'Gasto').length > 0 ? '<div class="separador">💰 Entradas e saídas</div>' : ''}
+    <div class="lista">
+      ${ts.filter(t => t.tipo === 'Ganho' || t.tipo === 'Gasto').map((t, i) => {
+        const realIdx = ts.indexOf(t);
+        return `<div class="${classeItem(t)}">
+          <span class="item-icon">${iconeItem(t)}</span>
+          <div class="item-info">
+            <div class="item-desc">${t.descricao}</div>
+            <div class="item-tipo">${t.tipo}</div>
+          </div>
+          <span class="item-valor ${corValorItem(t)}">R$ ${t.valor.toFixed(2)}</span>
+          ${!confirmado ? `
+            <div class="item-actions">
+              <button onclick="mover('${mes}',${realIdx},-1)">▲</button>
+              <button onclick="mover('${mes}',${realIdx},1)">▼</button>
             </div>
-            <span class="item-valor ${t.tipo === 'Ganho' ? 'verde' : 'vermelho'}">R$ ${t.valor.toFixed(2)}</span>
-            ${!confirmado ? `
-              <div class="item-actions">
-                <button onclick="mover('${mes}',${i},-1)">▲</button>
-                <button onclick="mover('${mes}',${i},1)">▼</button>
-              </div>
-              <button class="btn-del" onclick="remover('${mes}',${i})">🗑</button>` : ''}
-          </div>`).join('')}
+            <button class="btn-del" onclick="remover('${mes}',${realIdx})">🗑</button>` : ''}
+        </div>`;
+      }).join('')}
+    </div>
+    ${ts.filter(t => t.tipo === 'Benefício Recebido' || t.tipo === 'Benefício Gasto').length > 0 ? '<div class="separador">💜 Benefícios</div>' : ''}
+    <div class="lista">
+      ${ts.filter(t => t.tipo === 'Benefício Recebido' || t.tipo === 'Benefício Gasto').map((t) => {
+        const realIdx = ts.indexOf(t);
+        return `<div class="${classeItem(t)}">
+          <span class="item-icon">${iconeItem(t)}</span>
+          <div class="item-info">
+            <div class="item-desc">${t.descricao}</div>
+            <div class="item-tipo">${t.tipo}</div>
+          </div>
+          <span class="item-valor ${corValorItem(t)}">R$ ${t.valor.toFixed(2)}</span>
+          ${!confirmado ? `
+            <div class="item-actions">
+              <button onclick="mover('${mes}',${realIdx},-1)">▲</button>
+              <button onclick="mover('${mes}',${realIdx},1)">▼</button>
+            </div>
+            <button class="btn-del" onclick="remover('${mes}',${realIdx})">🗑</button>` : ''}
+        </div>`;
+      }).join('')}
     </div>
     <div class="anotacoes ${confirmado ? 'disabled' : ''}">
       <label>📝 Anotações do mês</label>
@@ -399,7 +469,7 @@ function renderCalendario() {
   const grid = document.getElementById('cal-grid');
   const total = document.getElementById('cal-total');
   grid.innerHTML = '';
-  let acumulado = 0, totalGanhos = 0, totalGastos = 0;
+  let acumulado = 0, totalGanhos = 0, totalGastos = 0, totalBenef = 0;
   const hoje = new Date();
 
   MESES.forEach((mes, mi) => {
@@ -407,9 +477,12 @@ function renderCalendario() {
     const ts = d.transacoes;
     const ganhos = ts.filter(t => t.tipo === 'Ganho').reduce((s, t) => s + t.valor, 0);
     const gastos = ts.filter(t => t.tipo === 'Gasto').reduce((s, t) => s + t.valor, 0);
-    const saldo = ganhos - gastos;
+    const benefRec = ts.filter(t => t.tipo === 'Benefício Recebido').reduce((s, t) => s + t.valor, 0);
+    const benefGasto = ts.filter(t => t.tipo === 'Benefício Gasto').reduce((s, t) => s + t.valor, 0);
+    const saldoBenef = benefRec - benefGasto;
+    const saldo = ganhos - gastos + saldoBenef;
     if (d.confirmado) acumulado += saldo;
-    totalGanhos += ganhos; totalGastos += gastos;
+    totalGanhos += ganhos; totalGastos += gastos; totalBenef += saldoBenef;
     const corSaldo = saldo >= 0 ? '#30d158' : '#ff453a';
     const corAcum = acumulado >= 0 ? '#30d158' : '#ff453a';
     const primeiroDia = new Date(anoAtual, mi, 1).getDay();
@@ -429,33 +502,29 @@ function renderCalendario() {
       <div class="cal-valores">
         <p class="verde">✅ R$ ${ganhos.toFixed(2)}</p>
         <p class="vermelho">🔴 R$ ${gastos.toFixed(2)}</p>
+        <p class="rosa">💜 R$ ${saldoBenef.toFixed(2)}</p>
         <p style="color:${corSaldo};font-weight:700">💵 R$ ${saldo.toFixed(2)}</p>
         ${d.confirmado ? `<p style="color:${corAcum};font-size:10px">📈 Acum: R$ ${acumulado.toFixed(2)}</p>` : '<p class="cinza" style="font-size:10px">⏳ Pendente</p>'}
       </div>`;
     grid.appendChild(card);
   });
 
-  const totalSaldo = totalGanhos - totalGastos;
+  const totalSaldo = totalGanhos - totalGastos + totalBenef;
   const corTotal = totalSaldo >= 0 ? '#30d158' : '#ff453a';
   total.innerHTML = `
     <h3>Total ${anoAtual}</h3>
     <div class="cal-total-row">
       <div class="cal-total-item"><div class="l">Ganhos</div><div class="v verde">R$ ${totalGanhos.toFixed(2)}</div></div>
       <div class="cal-total-item"><div class="l">Gastos</div><div class="v vermelho">R$ ${totalGastos.toFixed(2)}</div></div>
+      <div class="cal-total-item"><div class="l">Benefícios</div><div class="v rosa">R$ ${totalBenef.toFixed(2)}</div></div>
       <div class="cal-total-item"><div class="l">Saldo Final</div><div class="v" style="color:${corTotal}">R$ ${totalSaldo.toFixed(2)}</div></div>
     </div>`;
 }
 
 // ── CALCULADORA ──────────────────────────────────────────────
-function abrirCalculadora() {
-  document.getElementById('modal-calc').style.display = 'flex';
-}
-function fecharCalculadora() {
-  document.getElementById('modal-calc').style.display = 'none';
-}
-document.getElementById('modal-calc').addEventListener('click', function(e) {
-  if (e.target === this) fecharCalculadora();
-});
+function abrirCalculadora() { document.getElementById('modal-calc').style.display = 'flex'; }
+function fecharCalculadora() { document.getElementById('modal-calc').style.display = 'none'; }
+document.getElementById('modal-calc').addEventListener('click', function(e) { if (e.target === this) fecharCalculadora(); });
 function trocarAbaCalc(aba) {
   document.getElementById('calc-simples').style.display = aba === 'simples' ? 'block' : 'none';
   document.getElementById('calc-financeira').style.display = aba === 'financeira' ? 'block' : 'none';
