@@ -341,13 +341,12 @@ function renderMes(mes) {
   const corBenef = saldoBenef >= 0 ? 'azul-claro' : 'azul-escuro';
 
   const iconeItem = t => {
-    if (t.tipo === 'Ganho') return '➕';
-    if (t.tipo === 'Gasto') return '➖';
+    if (t.tipo === 'Ganho') return '✅';
+    if (t.tipo === 'Gasto') return '🔴';
     if (t.tipo === 'Benefício Recebido') return '📥';
     if (t.tipo === 'Benefício Gasto') return '📤';
     return '•';
   };
-
   const classeItem = t => {
     if (t.tipo === 'Benefício Recebido') return 'item item-benef-rec';
     if (t.tipo === 'Benefício Gasto') return 'item item-benef-gasto';
